@@ -6,6 +6,9 @@ const next = document.querySelector("#next");
 let limit = 8;
 let offset = 1;
 
+
+
+
 previous.addEventListener("click", () => {
   if (offset != 1) {
     offset -= 9;
@@ -20,23 +23,22 @@ next.addEventListener("click", () => {
   fetchPokemons(offset, limit);
 });
 
-function fetchPokemon(id) {
-  fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`)
-    .then((res) => res.json())
-    .then((data) => {
-      createPokemon(data);
-      spinner.style.display = "none";
-    });
-}
-
-function fetchPokemons(offset, limit) {
+async function fetchPokemons(offset, limit) {
   spinner.style.display = "block";
   for (let i = offset; i <= offset + limit; i++) {
-    fetchPokemon(i);
+    await fetchPokemon(i);
   }
 }
 
-function createPokemon(pokemon) {
+async function fetchPokemon(id) {
+  const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
+  const data = await response.json();
+  createPokemon(data);
+  spinner.style.display = "none";
+}
+
+
+async function createPokemon(pokemon) {
   const flipCard = document.createElement("div");
   flipCard.classList.add("flip-card");
 
@@ -51,8 +53,9 @@ function createPokemon(pokemon) {
   const spriteContainer = document.createElement("div");
   spriteContainer.classList.add("img-container");
 
+  // Esperar a que se resuelva la promesa de fetch para obtener la imagen del sprite
   const sprite = document.createElement("img");
-  sprite.src = pokemon.sprites.front_default;
+  sprite.src = await fetchPokemonSprite(pokemon.id);
 
   spriteContainer.appendChild(sprite);
 
@@ -70,12 +73,28 @@ function createPokemon(pokemon) {
   const cardBack = document.createElement("div");
   cardBack.classList.add("pokemon-block-back");
 
-  cardBack.appendChild(progressBars(pokemon.stats));
+  // Esperar a que se resuelva la promesa de fetch para obtener los datos de los stats
+  cardBack.appendChild(await fetchPokemonStats(pokemon.id));
 
   cardContainer.appendChild(card);
   cardContainer.appendChild(cardBack);
   pokemonContainer.appendChild(flipCard);
 }
+
+// Función para obtener el sprite de un Pokémon utilizando fetch()
+async function fetchPokemonSprite(id) {
+  const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
+  const data = await response.json();
+  return data.sprites.front_default;
+}
+
+// Función para obtener los stats de un Pokémon utilizando fetch()
+async function fetchPokemonStats(id) {
+  const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
+  const data = await response.json();
+  return progressBars(data.stats);
+}
+
 
 function progressBars(stats) {
   const statsContainer = document.createElement("div");
